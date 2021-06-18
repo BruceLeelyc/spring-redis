@@ -1,0 +1,1 @@
+spring-boot:默认的配置spring.redis

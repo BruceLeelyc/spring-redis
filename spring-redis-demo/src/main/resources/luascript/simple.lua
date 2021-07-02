@@ -5,7 +5,8 @@ print("8888888")
 -- 获取ARGV[1],这里对应到应用端是一个List<Map>.
 --  注意，这里接收到是的字符串，所以需要用cjson库解码成table类型
 local receive_arg_json =  cjson.decode(ARGV[1])
-local receive_arg_json =  cjson.decode(ARGV[1])
+--local temp =  cjson.encode({["times"] = 100, ["expire"] = 30000})
+--local receive_arg_json =  cjson.decode(temp)
 
 --返回的变量
 local result = {}
@@ -17,7 +18,7 @@ redis.log(redis.LOG_DEBUG, key2)
 redis.log(redis.LOG_WARNING, ARGV[1], #ARGV[1])
 
 --获取ARGV内的参数并打印
-local expire = receive_arg_json.expire
+local expire = receive_arg_json.expire  -- ???获取不到值.需要研究
 local times = receive_arg_json.times
 redis.log(redis.LOG_VERBOSE, tostring(times))
 redis.log(redis.LOG_NOTICE, tostring(expire))
@@ -25,7 +26,7 @@ redis.log(redis.LOG_NOTICE, tostring(expire))
 --往redis设置值
 redis.call("set", key1, tostring(receive_arg_json))
 redis.call("incr", key2)
---redis.call("expire", key2, expire)
+redis.call("expire", key2, 30000) -- expire 因为获取值先写成变量
 
 --用一个临时变量来存放json,json是要放入要返回的数组中的
 local jsonRedisTemp={}

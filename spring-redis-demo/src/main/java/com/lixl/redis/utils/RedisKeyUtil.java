@@ -7,6 +7,7 @@ package com.lixl.redis.utils;
  * @Date: 2021/6/16 21:15
  */
 public class RedisKeyUtil {
+
     /**
      * redis的key
      * 形式为：
@@ -43,4 +44,5 @@ public class RedisKeyUtil {
         buffer.append(majorKeyValue).append(":");
         return buffer.toString();
     }
+
 }

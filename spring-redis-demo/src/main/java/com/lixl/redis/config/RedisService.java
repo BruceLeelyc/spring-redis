@@ -1,5 +1,8 @@
 package com.lixl.redis.config;
 
+import com.lixl.redis.utils.RedisKeyUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
@@ -19,6 +22,9 @@ import java.util.stream.Stream;
  */
 @Component
 public class RedisService {
+
+    private static final Logger logger = LoggerFactory.getLogger(RedisService.class);
+
     @Autowired
     private RedisTemplate<String, String> redisTemplate;
 
@@ -125,6 +131,78 @@ public class RedisService {
      */
     public void persistKey(String key) {
         redisTemplate.persist(key);
+    }
+
+    /**
+     * redis锁定时长自动续订
+     * @param field
+     * @param key
+     * @param value
+     * @param lockTime
+     */
+    public void expandLockTimeHold(String field, String key, String value, int lockTime) {
+        SurvivalClamProcessor survivalClamProcessor = new SurvivalClamProcessor("lockField", key, value, 10);
+        Thread survivalThread = new Thread(survivalClamProcessor);
+        survivalThread.setDaemon(Boolean.TRUE);
+        survivalThread.start();
+    }
+
+    public class SurvivalClamProcessor implements Runnable {
+        private static final int REDIS_EXPIRE_SUCCESS = 1;
+        SurvivalClamProcessor(String field, String key, String value, int lockTime) {
+            this.field = field;
+            this.key = key;
+            this.value = value;
+            this.lockTime = lockTime;
+            this.signal = Boolean.TRUE;
+        }
+
+        private String field;
+        private String key;
+        private String value;
+        private int lockTime;
+
+        //线程关闭的标记
+        private volatile Boolean signal;
+
+        void stop() {
+            this.signal = Boolean.FALSE;
+        }
+
+        @Override
+        public void run() {
+            int waitTime = lockTime * 1000 * 2 / 3;
+            while (signal) {
+                try {
+                    Thread.sleep(waitTime);
+                    if (expandLockTime(field, key, value, lockTime)) {
+                        if (logger.isInfoEnabled()) {
+                            logger.info("expandLockTime 成功，本次等待{}ms，将重置锁超时时间重置为{}s,其中field为{},key为{}", waitTime, lockTime, field, key);
+                        }
+                    } else {
+                        if (logger.isInfoEnabled()) {
+                            logger.info("expandLockTime 失败，将导致SurvivalClamConsumer中断");
+                        }
+                        this.stop();
+                    }
+                } catch (InterruptedException e) {
+                    if (logger.isInfoEnabled()) {
+                        logger.info("SurvivalClamProcessor 处理线程被强制中断");
+                    }
+                } catch (Exception e) {
+                    logger.error("SurvivalClamProcessor run error", e);
+                }
+            }
+            if (logger.isInfoEnabled()) {
+                logger.info("SurvivalClamProcessor 处理线程已停止");
+            }
+        }
+    }
+
+    public Boolean expandLockTime(String field, String key, String value, int lockTime) {
+        // boolean lockField = redissonClient.getBucket(key).expire(lockTime, TimeUnit.SECONDS);
+        boolean lockField = redisTemplate.expire(key, lockTime, TimeUnit.SECONDS);
+        return lockField;
     }
 }
 

@@ -54,6 +54,22 @@ public class SpringRedisTests {
     private RedisService redisService;
 
     @Test
+    public void testLockTime() {
+        try {
+            redisTemplate.opsForValue().set("test_key", "test_value", 10, TimeUnit.SECONDS);
+            Object key = redisTemplate.opsForValue().get("test_key");
+            System.out.println("key="+key);
+            redisService.expandLockTimeHold("field", "test_key", "test_value", 10);
+            Thread.sleep(50*1000L);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } finally {
+            redisService.deleteKey("key");
+        }
+        System.out.println("处理成功.");
+    }
+
+    @Test
     public void testObj() throws Exception {
         User user = new User();
         user.setRemark("上海");

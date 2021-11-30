@@ -1,8 +1,8 @@
-spring-boot:默认的配置spring.redis
-包含整合事例:
-    1.redis相关的配置类RedisConfig
-    2.redis锁时间过期问题事例RedisService.expandLockTimeHold
-    3.redis使用lua脚本处理业务逻辑事例
+spring-boot:默认的配置spring.redis<br/>
+包含整合事例:<br/>
+    1.redis相关的配置类RedisConfig<br/>
+    2.redis锁时间过期问题事例RedisService.expandLockTimeHold<br/>
+    3.redis使用lua脚本处理业务逻辑事例<br/>
 
 如下引用:https://github.com/doocs/advanced-java/blob/main/docs/high-concurrency/redis-single-thread-model.md
 面试题
